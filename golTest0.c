@@ -8,6 +8,7 @@ char ** allocateGridMemory(int);
 //void fillGrid(char **, int, char * gridState);
 void printGrid(char **, int);
 void fillGrid(char **, int);
+void freeGrid(char **, int);
 void * errChkdMalloc(int);
 void prepareExit(void);
 void clearScreen(void);
@@ -37,7 +38,7 @@ int main(int argc, char * argv[]){
       }
     }
     getch();
-    if (0 == flagVar & 0b10000000){
+    if (0 == (flagVar & 0b10000000)){
       flagVar = flagVar | nextState(grid, copyGrid, gridSize);
       // binaryPrint(flagVar);
       flagVar = flagVar | 0b10000000;
@@ -52,6 +53,10 @@ int main(int argc, char * argv[]){
   }while (0 == flagVar & 0b00000001);
   
   free(grid);
+  free(copyGrid);
+  
+  //freeGrid(grid);
+  //freeGrid(copyGrid);
   
   return 0;
 }
@@ -127,6 +132,10 @@ int checkNeighbours(char ** grid, int y, int x, int size){
   
   k = x;
   i = y;
+  
+  printf("y == %d, x == %d\n", y, x);
+  printf("origY == %d, origX == %d\n", origY, origX);
+  printf("stopY == %d, stopX == %d\n", stopY, stopX);
   
   do{
     do{
@@ -284,4 +293,8 @@ void clearScreen(void){
 
 void prepareExit(void){
   //write necessary data to files
+}
+
+void freeGrid(char **, int){
+  
 }
