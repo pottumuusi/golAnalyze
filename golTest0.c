@@ -77,6 +77,8 @@ int nextState(char ** grid, char ** copyGrid, int size){
   int k;
   int assignDone = 0;
   
+  //---------copy grid to copyGrid-----------
+  
   for (i = 0; i < size; i++){
     for (k = 0; k < size; k++){
       if (1 == checkNeighbours(grid, i, k, size)){
