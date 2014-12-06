@@ -3,7 +3,7 @@
 
 int progArguments(char **, int);
 int nextState(char **, char **, int);
-int checkNeighbours(char **, int, int, int);
+int checkNeighbours(char **, char**, int, int, int);
 char ** allocateGridMemory(int);
 //void fillGrid(char **, int, char * gridState);
 void printGrid(char **, int);
@@ -12,6 +12,7 @@ void freeGrid(char **, int);
 void * errChkdMalloc(int);
 void prepareExit(void);
 void clearScreen(void);
+void binaryPrint(int, int);
 
 //gridSize can be given as a command line argument
 int main(int argc, char * argv[]){
@@ -26,31 +27,43 @@ int main(int argc, char * argv[]){
   grid = allocateGridMemory(gridSize);
   copyGrid = allocateGridMemory(gridSize);
   
-  printf("in main grid == 0x%08x\n", grid);
+  printf("in main grid == 0x%08x\n", (unsigned int)grid);
   
   fillGrid(grid, gridSize);
+  fillGrid(copyGrid, gridSize);
+  
+  /*
+  printf("testing binaryPrint with 00000100\n");
+  binaryPrint(0b00000100, 1);
+  */
   
   do{
     //delay loop
+    /*
     for (i = 0; i < 1000000; i++){
       for (k = 0; k < 1000000; k++){
         
       }
     }
-    getch();
+    */
+    getchar();
     if (0 == (flagVar & 0b10000000)){
+      printf("***executing if***\n");
       flagVar = flagVar | nextState(grid, copyGrid, gridSize);
-      // binaryPrint(flagVar);
       flagVar = flagVar | 0b10000000;
       printGrid(copyGrid, gridSize);
+      printf("Content of flagVar: ");
+      binaryPrint(flagVar, 1);
     }
     else{
+      printf("***executing else***\n");
       flagVar = flagVar | nextState(copyGrid, grid, gridSize);
-      // binaryPrint(flagVar);
       flagVar = flagVar & 0b00000001;
       printGrid(grid, gridSize);
+      printf("Content of flagVar: ");
+      binaryPrint(flagVar, 1);
     }
-  }while (0 == flagVar & 0b00000001);
+  }while (0 == (flagVar & 0b00000001));
   
   free(grid);
   free(copyGrid);
@@ -75,7 +88,7 @@ void printGrid(char ** grid, int size){
   }
 }
 
-int nextState(char ** grid, char ** copyGrid, int size){
+int nextState(char ** currGrid, char ** nextGrid, int size){
   //return 1 if grid will be empty
   
   int i;
@@ -86,7 +99,7 @@ int nextState(char ** grid, char ** copyGrid, int size){
   
   for (i = 0; i < size; i++){
     for (k = 0; k < size; k++){
-      if (1 == checkNeighbours(grid, i, k, size)){
+      if (1 == checkNeighbours(currGrid, nextGrid, i, k, size)){
         assignDone = 1;
       }
     }
@@ -100,7 +113,8 @@ int nextState(char ** grid, char ** copyGrid, int size){
   }
 }
 
-int checkNeighbours(char ** grid, int y, int x, int size){
+//int checkNeighbours(char ** grid, char ** copyGrid, int y, int x, int size){
+int checkNeighbours(char ** currGrid, char ** nextGrid, int y, int x, int size){
   char neighbourCount = 0;
   int i;
   int k;
@@ -114,12 +128,6 @@ int checkNeighbours(char ** grid, int y, int x, int size){
   printf("origY == %d\n", origY);
   */
   
-  if (y - 1 >= 0)
-    y = y - 1;
-    
-  if (x - 1 >= 0)
-    x = x - 1;
-  
   if (y + 1 <= size - 1)
     stopY = y + 1;
   else
@@ -130,17 +138,23 @@ int checkNeighbours(char ** grid, int y, int x, int size){
   else
     stopY = x;
   
+  if (y - 1 >= 0)
+    y = y - 1;
+    
+  if (x - 1 >= 0)
+    x = x - 1;
+  
   k = x;
   i = y;
   
-  printf("y == %d, x == %d\n", y, x);
-  printf("origY == %d, origX == %d\n", origY, origX);
-  printf("stopY == %d, stopX == %d\n", stopY, stopX);
-  
+  //check surrounding '*'
   do{
     do{
-      if ('*' == grid[i][k] && (i != origY && k != origX))
+      //if ('*' == grid[i][k] && (i != origY && k != origX))
+      if (('*' == currGrid[i][k]) && ((i != origY) && (k != origX))){
+        printf("found neighbour at: %d,%d\n", i, k);
         neighbourCount++;
+      }
       k++;
     }while (k <= stopX);
     k = x;
@@ -149,10 +163,15 @@ int checkNeighbours(char ** grid, int y, int x, int size){
   
   //printf("neighbourCount == %d\n", neighbourCount);
   
-  if ('*' == grid[origY][origX]){
+  if ('*' == currGrid[origY][origX]){
     printf("neighbourCount == %d\n", neighbourCount);
+    
+    printf("y == %d, x == %d\n", y, x);
+    printf("origY == %d, origX == %d\n", origY, origX);
+    printf("stopY == %d, stopX == %d\n", stopY, stopX);
     if (neighbourCount > 3 || neighbourCount < 2){
-      grid[origY][origX] = '-';
+      //grid[origY][origX] = '-';
+      nextGrid[origY][origX] = '-';
       //printf("returning 1\n");
       return 1;
     }
@@ -161,7 +180,8 @@ int checkNeighbours(char ** grid, int y, int x, int size){
   }
   else{
     if (3 == neighbourCount){
-      grid[origY][origX] = 'x';
+      //grid[origY][origX] = '*';
+      nextGrid[origY][origX] = '*';
       //printf("returning 1\n");
       return 1;
     }
@@ -229,7 +249,7 @@ char ** allocateGridMemory(int size){
   //grid[0][0] = 1;
   //allocHelper[0][0] = 1;
   printf("assign done\n");
-  printf("in allocateGridMemory allocHelper == 0x%08x\n", allocHelper);
+  printf("in allocateGridMemory allocHelper == 0x%08x\n", (unsigned int)allocHelper);
   //printf("in allocateGridMemory grid == 0x%08x\n", grid);
   return allocHelper;
 }
@@ -295,6 +315,47 @@ void prepareExit(void){
   //write necessary data to files
 }
 
-void freeGrid(char **, int){
+void freeGrid(char ** grid, int size){
   
+}
+
+void binaryPrint(int printVar, int byteSize){
+  char i;
+  //unsigned short mask = 0x0080;
+  unsigned int mask;
+  
+  if (byteSize > 4 || byteSize < 1){
+    printf("error: binaryPrint function does not support given byte size.\n");
+  }
+  else{
+    //make mask correct for current byteSize
+    if (byteSize == 1){
+      mask = 0x00000080;
+    }
+    else if(byteSize == 2){
+      mask = 0x00008000;
+    }
+    else if(byteSize == 3){
+      mask = 0x00800000;
+    }
+    else{
+      mask = 0x80000000;
+    }
+    
+    for (i = 0; i < (byteSize * 8); i++){
+      if (0 != (printVar & mask)){
+        putchar('1');
+      }
+      else{
+        putchar('0');
+      }
+      /*
+      printf("\nmask == 0x%08x\n", mask);
+      printf("printVar == 0x%08x\n", printVar);
+      printf("printVar & mask == 0x%08x\n\n", (printVar & mask));
+      */
+      mask = mask >> 1;
+    }
+    printf("\n");
+  }
 }
