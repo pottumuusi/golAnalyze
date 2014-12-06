@@ -5,6 +5,7 @@ int progArguments(char **, int);
 int nextState(char **, char **, int);
 int checkNeighbours(char **, char**, int, int, int);
 char ** allocateGridMemory(int);
+int * allocHolderMemory(int);
 //void fillGrid(char **, int, char * gridState);
 void printGrid(char **, int);
 void fillGrid(char **, int);
@@ -14,6 +15,12 @@ void prepareExit(void);
 void clearScreen(void);
 void binaryPrint(int, int);
 
+//maybe record amount of changes to * and changes to -
+//then fill grid with those with more changes to it
+//and then add the rest
+
+//need tempGrid?
+
 //gridSize can be given as a command line argument
 int main(int argc, char * argv[]){
   int i;
@@ -22,16 +29,19 @@ int main(int argc, char * argv[]){
   char flagVar = 0;
   char ** grid;
   char ** copyGrid;
+  int * changeHolder;
   
   gridSize = progArguments(argv, argc);
   grid = allocateGridMemory(gridSize);
   copyGrid = allocateGridMemory(gridSize);
+  changeHolder = allocHolderMemory(gridSize);
   
   printf("in main grid == 0x%08x\n", (unsigned int)grid);
   
   fillGrid(grid, gridSize);
   fillGrid(copyGrid, gridSize);
   
+  printGrid(grid, gridSize);
   /*
   printf("testing binaryPrint with 00000100\n");
   binaryPrint(0b00000100, 1);
@@ -81,6 +91,7 @@ void printGrid(char ** grid, int size){
   clearScreen();
   
   for (i = 0; i < size; i++){
+    printf("%d\t", i);
     for (k = 0; k < size; k++){
       printf("%c", grid[i][k]);
     }
@@ -93,19 +104,26 @@ int nextState(char ** currGrid, char ** nextGrid, int size){
   
   int i;
   int k;
-  int assignDone = 0;
+  //int assignDone = 0;
+  int changeType = 0; //how the grid changed. 0 for no change
+  int astChanges = 0; //how many changes to '*'
+  int minChanges = 0; //how many changes to '-'
   
   //---------copy grid to copyGrid-----------
   
   for (i = 0; i < size; i++){
     for (k = 0; k < size; k++){
-      if (1 == checkNeighbours(currGrid, nextGrid, i, k, size)){
-        assignDone = 1;
+      changeType = checkNeighbours(currGrid, nextGrid, i, k, size);
+      if (1 == changeType){
+        astChanges++;
+      }
+      else if (2 == changeType){
+        minChanges++;
       }
     }
   }
   
-  if (1 == assignDone){
+  if (astChanges > 0 || minChanges > 0){
     return 0;
   }
   else{
@@ -147,20 +165,42 @@ int checkNeighbours(char ** currGrid, char ** nextGrid, int y, int x, int size){
   k = x;
   i = y;
   
+  if ('*' == currGrid[origY][origX]){
+    printf("checking neighbours for: [%d, %d]\n", origY, origX);
+  }
+  
   //check surrounding '*'
   do{
     do{
       //if ('*' == grid[i][k] && (i != origY && k != origX))
+      /*
       if (('*' == currGrid[i][k]) && ((i != origY) && (k != origX))){
+        printf("origY == %d, origX == %d\n", origY, origX);
         printf("found neighbour at: %d,%d\n", i, k);
-        neighbourCount++;
+        //neighbourCount++;
+        neighbourCount = neighbourCount + 1;
+        printf("neighbourCount == %d\n", neighbourCount);
+        printf("k == %d, i == %d\n\n", k, i);
       }
+      */
+      
+      if ('*' == currGrid[origY][origX]){
+        printf("checking [%d, %d] which contains %c\n", i, k, currGrid[i][k]);
+      }
+      
+      if (('*' == currGrid[i][k]) && (0 == ((i == origY) && (k == origX)))){
+        neighbourCount++;
+        printf("^neighbour^\n");
+      }
+      
       k++;
     }while (k <= stopX);
     k = x;
     i++;
   }while (i <= stopY);
-  
+  if (neighbourCount > 0){
+    printf("while ends\n\n");
+  }
   //printf("neighbourCount == %d\n", neighbourCount);
   
   if ('*' == currGrid[origY][origX]){
@@ -168,10 +208,11 @@ int checkNeighbours(char ** currGrid, char ** nextGrid, int y, int x, int size){
     
     printf("y == %d, x == %d\n", y, x);
     printf("origY == %d, origX == %d\n", origY, origX);
-    printf("stopY == %d, stopX == %d\n", stopY, stopX);
+    printf("stopY == %d, stopX == %d\n\n", stopY, stopX);
     if (neighbourCount > 3 || neighbourCount < 2){
       //grid[origY][origX] = '-';
       nextGrid[origY][origX] = '-';
+      printf("* changes to - @ [%d, %d]\n\n", origY, origX);
       //printf("returning 1\n");
       return 1;
     }
@@ -182,8 +223,9 @@ int checkNeighbours(char ** currGrid, char ** nextGrid, int y, int x, int size){
     if (3 == neighbourCount){
       //grid[origY][origX] = '*';
       nextGrid[origY][origX] = '*';
+      printf("- changes to * @ [%d, %d]\n\n", origY, origX);
       //printf("returning 1\n");
-      return 1;
+      return 2;
     }
     else
       return 0;
@@ -201,9 +243,10 @@ void fillGrid(char ** grid, int size){
     }
   }
   
-  grid[10][10] = '*';
+  grid[9][10] = '*';
   grid[10][11] = '*';
-  grid[11][10] = '-';
+  grid[11][9] = '*';
+  grid[11][10] = '*';
   grid[11][11] = '*';
 }
 
@@ -358,4 +401,8 @@ void binaryPrint(int printVar, int byteSize){
     }
     printf("\n");
   }
+}
+
+int * allocHolderMemory(int gridSize){
+  
 }
