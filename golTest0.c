@@ -154,7 +154,7 @@ int checkNeighbours(char ** currGrid, char ** nextGrid, int y, int x, int size){
   if (x + 1 <= size - 1)
     stopX = x + 1;
   else
-    stopY = x;
+    stopX = x;
   
   if (y - 1 >= 0)
     y = y - 1;
@@ -403,6 +403,9 @@ void binaryPrint(int printVar, int byteSize){
   }
 }
 
-int * allocHolderMemory(int gridSize){
+char * allocHolderMemory(int gridSize){
+  //use a sequence of two values for position and one for change type
+  //gridSize * gridSize
   
+  return (char *)errChkdMalloc((4 + 4 + 1) * (gridSize * gridSize));
 }
