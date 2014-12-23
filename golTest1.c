@@ -3,12 +3,23 @@
 
 #define PAUSE_LIMIT 2000000000
 
-int progArguments(char **, int);
+/*
+#define DEFAULT_GRID(chArray){\
+        int i, k;\
+        initGridSize = 20 * 20;\
+        chArray = (char *)errChkdMalloc(initGridSize);\
+        for(i = 0; i < initGridSize * initGridSize; i++){\
+          chArray[i] = '-';\
+        }\
+*/        
+
+int processArgFile(FILE *, char *);
 int nextState(char **, char **, int);
 int checkNeighbours(char **, char**, int, int, int);
 char ** allocateGridMemory(int);
+void tryOpen(FILE *, char *);
 void printGrid(char **, int);
-void fillGrid(char **, int);
+void fillGrid(char **, int, char *);
 void freeGrid(char **, int);
 void * errChkdMalloc(int);
 void prepareExit(void);
@@ -29,15 +40,27 @@ int main(int argc, char * argv[]){
   unsigned int pauseFreq;
   unsigned int pauseCounter = 0;
   char flagVar = 0;
+  char * initGrid;
   char ** grid;
   char ** copyGrid;
+  FILE * gridFile;
   
-  gridSize = progArguments(argv, argc);
+  if (argc > 1){
+    printf("Opening file: %s...\n", argv[1]);
+    tryOpen(gridFile, argv[1]);
+    
+    gridSize = processArgFile(gridFile, initGrid);
+    fclose(gridFile);
+    return 0;
+  }
+  else{
+    //DEFAULT_GRID(initGrid)
+  }
   grid = allocateGridMemory(gridSize);
   copyGrid = allocateGridMemory(gridSize);
   
-  fillGrid(grid, gridSize);
-  fillGrid(copyGrid, gridSize);
+  fillGrid(grid, gridSize, initGrid);
+  fillGrid(copyGrid, gridSize, initGrid);
   
   printf("\nHow frequently do you want to pause execution?\n");
   printf("\t0 = no pause\n\t1 = pause after every change in state\n");
@@ -185,7 +208,7 @@ int checkNeighbours(char ** currGrid, char ** nextGrid, int y, int x, int size){
   }
 }
 
-void fillGrid(char ** grid, int size){
+void fillGrid(char ** grid, int size, char * fillArray){
   int i;
   int k;
   
@@ -195,11 +218,7 @@ void fillGrid(char ** grid, int size){
     }
   }
   
-  grid[9][10] = '*';
-  grid[10][11] = '*';
-  grid[11][9] = '*';
-  grid[11][10] = '*';
-  grid[11][11] = '*';
+  
 }
 
 void * errChkdMalloc(int size){
@@ -229,15 +248,12 @@ char ** allocateGridMemory(int size){
   return allocHelper;
 }
 
-int progArguments(char ** argStrings, int argAmount){
-  int gridSize;
+int processArgFile(FILE * gridFile, char * argAmount){
+  //gridFile has data of the grid in binary form
+  //1 stands for '*' and 0 for '-'
+  int gridSize = -1;
   
-  if (1 == argAmount){
-    gridSize = 20;
-  }
-  else if(2 == argAmount){
-    gridSize = strToInt(argStrings[1]);
-  }
+  
   
   return gridSize;
 }
@@ -326,4 +342,49 @@ void binaryPrint(int printVar, int byteSize){
     }
     printf("\n");
   }
+}
+
+void tryOpen(FILE * gridFile, char * fileName){
+  int i = 0;
+  
+  while (fileName[i] != '\0'){
+    if ('.' == fileName[i]){
+      //test if file name ends with .txt
+      if ('t'  == fileName[i + 1] && 'x'  == fileName[i + 2] &&\
+          't'  == fileName[i + 3] && '\0' == fileName[i + 4])\
+      {
+        //try to open in read mode and exit if fopen fails
+        if (NULL == (gridFile = fopen(fileName, "r"))){
+          printf("Error: could not open file %s\n", fileName);
+          exit(1);
+        }
+        i = -1;
+        break;
+      }
+      //otherwise test if file name ends with .dat
+      else if ('d'  == fileName[i + 1] && 'a'  == fileName[i + 2] &&\
+               't'  == fileName[i + 3] && '\0' == fileName[i + 4])\
+      {
+        //try to open in binary read mode and exit if fopen fails
+        if (NULL == (gridFile = fopen(fileName, "rb"))){
+          printf("Error: could not open file %s\n", fileName);
+          exit(1);
+        }
+        i = -1;
+        break;
+      }
+      else{
+        printf("Error: given file name should end with .txt or .dat\n");
+        exit(0);
+      }
+    }
+    i++;
+  }
+  
+  if (i != -1){
+    printf("Error: given file name should end with .txt or .dat\n");
+    exit(0);
+  }
+  
+  
 }
